@@ -19,6 +19,9 @@ for i = 1:total_expos-1
     
     if ~exist('img2_fft', 'var')
         img1 = mean(im2double(image_store(ia(i)).image), 3);
+        img_size = size(img1);
+        img_center = floor(img_size(1:2)/2);
+        img1 = img1(img_center(1)-900:img_center(1)+900, img_center(2)-900:img_center(2)+900);
         m = imfilter(img1, h, 'symmetric');
         d = sqrt(imfilter((img1 - m).^2, h, 'symmetric'));
         img1_he = (img1 - m) ./ (d + 0.03);
@@ -28,6 +31,9 @@ for i = 1:total_expos-1
     end
     
     img2 = mean(im2double(image_store(ia(i+1)).image), 3);
+    img_size = size(img2);
+    img_center = floor(img_size(1:2)/2);
+    img2 = img2(img_center(1)-900:img_center(1)+900, img_center(2)-900:img_center(2)+900);
     m = imfilter(img2, h, 'symmetric');
     d = sqrt(imfilter((img2 - m).^2, h, 'symmetric'));
     img2_he = (img2 - m) ./ (d + 0.03);
