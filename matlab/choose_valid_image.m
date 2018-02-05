@@ -68,7 +68,13 @@ for i = 1:total_images
             if isnan(expo_comp(ei))
                 continue;
             end
-            current_img = srgb_gamma(srgb_inverse_gamma(img) * 2^expo_comp(ei));
+            current_img = srgb_gamma(srgb_inverse_gamma(im2double(img)) * 2^expo_comp(ei));
+            switch class(img)
+                case 'uint8'
+                    current_img = uint8(current_img * 255);
+                case 'uint16'
+                    current_img = uint16(current_img * 255);    
+            end
             image_store((i-1)*3+ei, 1).image = current_img;
             image_store((i-1)*3+ei, 1).exposure = exposure_store(i, :) +[0, expo_comp(ei)];
             image_valid((i-1)*3+ei, 1) = true;
