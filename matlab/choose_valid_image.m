@@ -38,10 +38,8 @@ for i = 1:total_images
 
     valid_expo_comp = nan(3, 1);
     for ei = 1:length(expo_comp)
-        if ei ~= 2
-            continue;
-        end
-        img_v_ec = srgb_gamma(srgb_inverse_gamma(img_v) * 2^expo_comp(ei));
+        imv_v_ec = exposure_compensation(img_v, expo_comp(ei));
+        % img_v_ec = srgb_gamma(srgb_inverse_gamma(img_v) * 2^expo_comp(ei));
 
         p = prctile(img_v_ec(:), [90, 95, 100]);
         if p(3) < 0.6
