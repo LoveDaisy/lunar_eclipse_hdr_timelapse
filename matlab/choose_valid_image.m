@@ -34,7 +34,7 @@ for i = 1:total_images
     
     img = imread(sprintf('%s/%s', image_path, f_name));
     max_value = intmax(class(img));
-    img_v = mean(img, 3) / max_value;
+    img_v = mean(img, 3) / double(max_value);
 
     valid_expo_comp = nan(3, 1);
     for ei = 1:length(expo_comp)
@@ -68,7 +68,8 @@ for i = 1:total_images
             if isnan(expo_comp(ei))
                 continue;
             end
-            image_store((i-1)*3+ei, 1).image = img;
+            current_img = srgb_gamma(srgb_inverse_gamma(img) * 2^expo_comp(ei));
+            image_store((i-1)*3+ei, 1).image = current_img;
             image_store((i-1)*3+ei, 1).exposure = exposure_store(i, :) +[0, expo_comp(ei)];
             image_valid((i-1)*3+ei, 1) = true;
         end
