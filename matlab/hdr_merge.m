@@ -10,7 +10,7 @@ for i = 1:total_images
     img = im2double(imtranslate(image_store(i).image, -trans_mat(:, i, ref_ind)'));
     img_v = mean(img, 3);
     
-    w = exp(-abs((img_v - 0.5) / 0.65).^3);
+    w = exp(-abs((img_v - 0.5) / 0.4).^2);
     total_w = total_w + w;
     
     img_pyr = generate_laplacian_pyramid(img, pyr_layers, pyr_sig);
@@ -40,7 +40,7 @@ for i = 1:total_images
     subplot(1,3,2);
     imshow(img);
     subplot(1,3,3);
-    imagesc(w./total_w);
+    imagesc(w);
     colormap gray;
     axis equal; axis tight; axis off;
     drawnow;

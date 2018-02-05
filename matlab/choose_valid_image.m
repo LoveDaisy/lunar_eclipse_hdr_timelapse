@@ -38,6 +38,9 @@ for i = 1:total_images
 
     valid_expo_comp = nan(3, 1);
     for ei = 1:length(expo_comp)
+        if ei ~= 2
+            continue;
+        end
         img_v_ec = srgb_gamma(srgb_inverse_gamma(img_v) * 2^expo_comp(ei));
 
         p = prctile(img_v_ec(:), [90, 95, 100]);
@@ -65,7 +68,7 @@ for i = 1:total_images
             
 
         for ei = 1:length(expo_comp)
-            if isnan(expo_comp(ei))
+            if isnan(valid_expo_comp(ei))
                 continue;
             end
             current_img = srgb_gamma(srgb_inverse_gamma(im2double(img)) * 2^expo_comp(ei));
@@ -73,7 +76,7 @@ for i = 1:total_images
                 case 'uint8'
                     current_img = uint8(current_img * 255);
                 case 'uint16'
-                    current_img = uint16(current_img * 255);    
+                    current_img = uint16(current_img * 65535);    
             end
             image_store((i-1)*3+ei, 1).image = current_img;
             image_store((i-1)*3+ei, 1).exposure = exposure_store(i, :) +[0, expo_comp(ei)];

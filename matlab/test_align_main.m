@@ -1,5 +1,11 @@
 clear; close all; clc;
 
+path0 = getenv('PATH');
+if ~contains(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin')
+    path1 = ['/usr/local/Cellar/dcraw/9.27.0_2/bin:', path0];
+    setenv('PATH', path1);
+end
+
 for n = 1:5
     image_path = sprintf('/Users/jiajiezhang/Desktop/tmp/%02d/', n);
     fprintf('Set image path: %s\n', image_path);
