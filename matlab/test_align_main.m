@@ -1,10 +1,10 @@
 clear; close all; clc;
 
-for n = 2
+for n = 1
 image_path = sprintf('/Users/jiajiezhang/Desktop/tmp/%02d/', n);
 % image_path = '/Users/jiajiezhang/Desktop/tmp/02/';
 fprintf('Set image path: %s\n', image_path);
-files = dir(sprintf('%s/%s', image_path, 'IMG_*.TIF'));
+files = dir(sprintf('%s/%s', image_path, 'IMG_*'));
 image_store = choose_valid_image(image_path, files);
 
 trans_mat = align_images(image_store);
