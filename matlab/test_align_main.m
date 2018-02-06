@@ -6,7 +6,7 @@ if ~contains(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin')
     setenv('PATH', path1);
 end
 
-for n = 1:5
+for n = 4
     image_path = sprintf('/Users/jiajiezhang/Desktop/tmp/%02d/', n);
     fprintf('Set image path: %s\n', image_path);
     files = dir(sprintf('%s/%s', image_path, 'IMG_*'));
