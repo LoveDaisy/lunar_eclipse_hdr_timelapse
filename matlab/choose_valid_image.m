@@ -46,6 +46,13 @@ for i = 1:total_images
         img_v_ec = exposure_compensation(img_v, expo_comp(ei));
         % img_v_ec = srgb_gamma(srgb_inverse_gamma(img_v) * 2^expo_comp(ei));
 
+%         x = 94:.1:100;
+%         y = prctile(img_v_ec(:), x);
+%         figure(1); clf;
+%         plot(x, y, [94.5, 94.5], [0, 1], 'k:', [94.3, 94.3], [0, 1], 'k:', ...
+%             [94,100],[0.5,0.5], 'k:', [94,100],[0.7,0.7], 'k:');
+%         title(sprintf('EV: %.2f', expo_comp(ei)));
+%         axis([94, 100, 0, 1]);
         p = prctile(img_v_ec(:), [95.1, 98, 100]);
         p = srgb_gamma(p);
         fprintf(' Intensity percentile: [%.2f,%.2f,%.2f]\n', p(1), p(2), p(3));
@@ -59,6 +66,7 @@ for i = 1:total_images
         end
 
         valid_expo_comp(ei) = expo_comp(ei);
+%         pause;
     end
 
     if any(~isnan(valid_expo_comp))
@@ -81,7 +89,6 @@ for i = 1:total_images
             end
             fprintf(' Exposure conpensation: %.2f\n', expo_comp(ei));
             current_img = srgb_gamma(exposure_compensation(img_double, expo_comp(ei)));
-%             current_img = srgb_gamma(srgb_inverse_gamma(im2double(img)) * 2^expo_comp(ei));
             switch class(img)
                 case 'uint8'
                     current_img = uint8(current_img * 255);

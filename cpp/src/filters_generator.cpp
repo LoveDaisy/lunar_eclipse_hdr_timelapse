@@ -3,105 +3,67 @@
 namespace {
 
 const int PYR_LAYERS = 8;
-const int WIDTH = 5400;
-const int HEIGHT = 3600;
+const int TYPICAL_WIDTH = 5400;
+const int TYPICAL_HEIGHT = 3600;
 
 
-class BuildGaussPyramidFilter : public Halide::Generator<BuildGaussPyramidFilter> {
+class Blend2Images : public Halide::Generator<Blend2Images> {
 public:
-    Input<Buffer<float>>            input{"input", 2};
+    Input<Buffer<uint16_t>>     img1{"img1", 3};
+    Input<Buffer<uint16_t>>     img2{"img2", 3};
 
-    Output<Func[PYR_LAYERS]>    gPyramid{"gPyramid", Float(32), 2};
+    Output<Buffer<uint16_t>>    output{"output", 3};
 
-    Var x, y;
+    Var x, y, c;
 
     void generate() {
-        Func clamped = Halide::BoundaryConditions::repeat_edge(input);
+        Func img1_repeat = Halide::BoundaryConditions::repeat_edge(img1);
+        Func img2_repeat = Halide::BoundaryConditions::repeat_edge(img2);
         
-        gPyramid[0](x, y, c) = clamped(x, y, c);
-        for (int i = 1; i < PYR_LAYERS; i++) {
-            gPyramid[i](x, y) = downsample(gPyramid[i-1])(x, y);
-        }
-    }
-
-    void schedule() {
-        ;
-    }
-};
-
-
-class BuildLaplacianPyramidFilter : public Halide::Generator<BuildLaplacianPyramidFilter> {
-public:
-    Input<Buffer<float>>         input{"input", 3};
-
-    Output<Func[PYR_LAYERS]>    lPyramid{"lPyramid", Float(32), 3};
-
-    Var x, y, c;
-
-    void generate() {
-        Func clamped = Halide::BoundaryConditions::repeat_edge(input);
+        Func img1_gauss_pyr[PYR_LAYERS], img2_gauss_pyr[PYR_LAYERS],
+             img1_gray, img2_gray,
+             w1_gauss_pyr[PYR_LAYERS], w2_gauss_pyr[PYR_LAYERS],
+             out_lap_pyr[PYR_LAYERS];
         
-        Func gPyramid[PYR_LAYERS];
-        gPyramid[0](x, y, c) = clamped(x, y, c);
+        img1_gauss_pyr[0](x, y, c) = cast<float>(img1_repeat(x, y, c)) / 65535.0f;
+        img2_gauss_pyr[0](x, y, c) = cast<float>(img2_repeat(x, y, c)) / 65535.0f;
+        img1_gray = rgb_to_gray(img1_gauss_pyr[0]);
+        img2_gray = rgb_to_gray(img2_gauss_pyr[0]);
+        w1_gauss_pyr[0](x, y) = exp(-(img1_gray(x, y) - 0.52f) * (img1_gray(x, y) - 0.52f) / 0.25f);
+        w2_gauss_pyr[0](x, y) = exp(-(img2_gray(x, y) - 0.52f) * (img2_gray(x, y) - 0.52f) / 0.25f);
         for (int i = 1; i < PYR_LAYERS; i++) {
-            gPyramid[i](x, y) = downsample(gPyramid[i-1])(x, y);
+            img1_gauss_pyr[i](x, y, c) = downsample(img1_gauss_pyr[i-1])(x, y, c);
+            img2_gauss_pyr[i](x, y, c) = downsample(img2_gauss_pyr[i-1])(x, y, c);
+            w1_gauss_pyr[i](x, y) = downsample(w1_gauss_pyr[i-1])(x, y);
+            w2_gauss_pyr[i](x, y) = downsample(w2_gauss_pyr[i-1])(x, y);
+        }
+        out_lap_pyr[PYR_LAYERS-1](x, y, c) = (img1_gauss_pyr[PYR_LAYERS-1](x, y, c) * w1_gauss_pyr[PYR_LAYERS-1](x, y) + 
+                                             img2_gauss_pyr[PYR_LAYERS-1](x, y, c) * w2_gauss_pyr[PYR_LAYERS-1](x, y)) / 
+                                             (w1_gauss_pyr[PYR_LAYERS-1](x, y) + w2_gauss_pyr[PYR_LAYERS-1](x, y));
+        for (int i = PYR_LAYERS-2; i >= 0; i--) {
+            out_lap_pyr[i](x, y, c) = ((img1_gauss_pyr[i](x, y, c) - upsample(img1_gauss_pyr[i+1])(x, y, c)) * w1_gauss_pyr[i](x, y) +
+                                      (img2_gauss_pyr[i](x, y, c) - upsample(img2_gauss_pyr[i+1])(x, y, c)) * w2_gauss_pyr[i](x, y)) / 
+                                      (w1_gauss_pyr[i](x, y) + w2_gauss_pyr[i](x, y)) +
+                                      upsample(out_lap_pyr[i+1])(x, y, c);
         }
 
-        for (int i = 0; i < PYR_LAYERS-1; i++) {
-            lPyramid[i](x, y) = gPyramid[i](x, y) - upsample(gPyramid[i+1])(x, y);
-        }
-        lPyramid[PYR_LAYERS-1](x, y) = gPyramid[PYR_LAYERS-1](x, y);
-    }
-
-
-    void schedule() {
-        ;
-    }
-};
-
-
-class PyramidMulti : public Halide::Generator<PyramidMulti> {
-public:
-    Input<Func[PYR_LAYERS]>     imgPyr{"imgPyr", Float(32), 3};
-    Input<Func[PYR_LAYERS]>     wPyr{"wPyr", Float(32), 2};
-
-    Output<Func[PYR_LAYERS]>    outPyr{"outPyr", Float(32), 3};
-
-    Var x, y, c;
-
-    void generate() {
-        for (int i = 0; i < PYR_LAYERS; i++) {
-            outPyr[i](x, y, c) = imgPyr[i](x, y, c) * wPyr[i](x, y);
-        }
+        output(x, y, c) = cast<uint16_t>(clamp(out_lap_pyr[0](x, y, c), 0.0f, 1.0f) * 65535.0f);
     }
 
     void schedule() {
-        ;
-    }
-};
+        img1.dim(0).set_bounds_estimate(0, TYPICAL_WIDTH);
+        img1.dim(1).set_bounds_estimate(0, TYPICAL_HEIGHT);
+        img1.dim(2).set_bounds_estimate(0, 3);
 
+        img2.dim(0).set_bounds_estimate(0, TYPICAL_WIDTH);
+        img2.dim(1).set_bounds_estimate(0, TYPICAL_HEIGHT);
+        img2.dim(2).set_bounds_estimate(0, 3);
 
-class PyramidAdd : public Halide:Generator<PyramidAdd> {
-public:
-    Input<Func[PYR_LAYERS]>     pyr1{"pyr1", Float(32), 3};
-    Input<Func[PYR_LAYERS]>     pyr2{"pyr2", Float(32), 3};
-
-    Output<Func[PYR_LAYERS]>    outPyr{"outPyr", Float(32), 3};
-
-    Var x, y, c;
-
-    void generate() {
-        for (int i = 0; i < PYR_LAYERS; i++) {
-            outPyr[i](x, y, c) = pyr1[i](x, y, c) + pyr2[i](x, y, c);
-        }
-    }
-
-    void schedule() {
-        ;
+        output.estimate(x, 0, TYPICAL_WIDTH).estimate(y, 0, TYPICAL_HEIGHT).estimate(c, 0, 3);
     }
 };
 
 
 }
 
-HALIDE_REGISTER_GENERATOR(BuildLaplacianPyramidFilter, build_pyramid_filter)
+HALIDE_REGISTER_GENERATOR(Blend2Images, blend2)

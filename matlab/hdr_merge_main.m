@@ -1,7 +1,7 @@
 clear; close all; clc;
 
 path0 = getenv('PATH');
-if ~contains(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin')
+if ~isempty(strfind(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin'))
     path1 = ['/usr/local/Cellar/dcraw/9.27.0_2/bin:', path0];
     setenv('PATH', path1);
 end
@@ -16,6 +16,7 @@ planned_expo_iso = [6400, 3200, 1600, 800, 200, 100, 100, 100, 100, 100];
 files = dir([input_image_path, 'IMG_*.CR2']);
 total_images = length(files);
 last_expo_idx = 0; start_file_id = 0;
+k = 1;
 for i = 1:total_images
     f_name = [input_image_path, files(i).name];
     f_info = imfinfo(f_name);
@@ -30,8 +31,11 @@ for i = 1:total_images
     elseif expo_idx == length(planned_expo_time)
         if start_file_id > 0
             current_files = files(start_file_id:i);
+            last_expo_idx = 0;
+        else
+            last_expo_idx = 0;
+            continue;
         end
-        last_expo_idx = 0;
     elseif expo_idx < last_expo_idx || abs(expo_idx - last_expo_idx) ~= 1
         if expo_idx == 1
             last_expo_idx = expo_idx;
@@ -54,5 +58,6 @@ for i = 1:total_images
     
     merge_result = hdr_merge(image_store, trans_mat);
     
-    imwrite(uint16(merge_result * 65535), [output_image_path, sprintf('%d.tiff', i)]);
+    imwrite(uint16(merge_result * 65535), sprintf('%s%03d.tiff', output_image_path, k));
+    k = k + 1;
 end

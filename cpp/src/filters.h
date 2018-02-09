@@ -26,4 +26,12 @@ Halide::Func upsample(Halide::Func f) {
     return upy;
 }
 
+
+Halide::Func rgb_to_gray(Halide::Func f) {
+    Halide::Func gray;
+    Halide::Var x, y;
+    gray(x, y) = 0.299f * f(x, y, 0) + 0.587f * f(x, y, 1) + 0.114f * f(x, y, 2);
+    return gray;
+}
+
 }

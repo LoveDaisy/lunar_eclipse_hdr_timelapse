@@ -11,9 +11,6 @@ for i = 1:total_images
     img_v = mean(img, 3);
     
     intensity_w = exp(-abs((img_v - 0.52) / 0.5).^2);
-%     detail_w = imfilter(abs(imfilter(img_v, fspecial('log', 5, 1.5), 'symmetric')), ...
-%         fspecial('gaussian', 60, 15));
-%     w = intensity_w .* detail_w;
     w = intensity_w;
     total_w = total_w + w;
     
