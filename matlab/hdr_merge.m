@@ -1,7 +1,13 @@
 function merge_result = hdr_merge(image_store, trans_mat)
-pyr_layers = 6;
+pyr_layers = 5;
 pyr_sig = 1.35;
 total_images = length(image_store);
+
+if total_images == 1
+    fprintf('Merging image 1/1...\n');
+    merge_result = im2double(image_store.image);
+    return
+end
 
 ref_ind = min(3, total_images);
 total_w = 0;

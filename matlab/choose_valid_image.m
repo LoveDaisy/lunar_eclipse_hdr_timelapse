@@ -10,23 +10,18 @@ for i = 1:total_images
     end
     t = info.DigitalCamera.ExposureTime;
     iso = info.DigitalCamera.ISOSpeedRatings;
-    tmp = strsplit(files(i).name, '_');
-    if strfind(tmp{end}, '+')
-        bias = 1;
-    elseif strfind(tmp{end}, '-')
-        bias = -1;
-    else
-        bias = 0;
-    end
-    exposure_store(i, :) = [t * iso, bias];
+    exposure_store(i, :) = [t * iso, 0];
 end
 
 [exposure_store, idx] = sortrows(exposure_store);
 files = files(idx);
 clear idx;
 
+load('pca_logit_data.mat', 'hist_store_mean', 'B', 'coeff');
+
 % expo_comp = [-0.67, 0, 0.67];
 expo_comp = [-.7, 0, .7];
+x = 94:.1:100;
 image_store = struct('image', [], 'exposure', []);
 image_valid = false(total_images * 3, 1);
 for i = 1:total_images
@@ -44,29 +39,37 @@ for i = 1:total_images
     over_expo = false;
     for ei = 1:length(expo_comp)
         img_v_ec = exposure_compensation(img_v, expo_comp(ei));
-        % img_v_ec = srgb_gamma(srgb_inverse_gamma(img_v) * 2^expo_comp(ei));
 
-%         x = 94:.1:100;
-%         y = prctile(img_v_ec(:), x);
-%         figure(1); clf;
-%         plot(x, y, [94.5, 94.5], [0, 1], 'k:', [94.3, 94.3], [0, 1], 'k:', ...
-%             [94,100],[0.5,0.5], 'k:', [94,100],[0.7,0.7], 'k:');
-%         title(sprintf('EV: %.2f', expo_comp(ei)));
-%         axis([94, 100, 0, 1]);
-        p = prctile(img_v_ec(:), [95.1, 98, 100]);
-        p = srgb_gamma(p);
-        fprintf(' Intensity percentile: [%.2f,%.2f,%.2f]\n', p(1), p(2), p(3));
-        if p(3) < 0.80
-            fprintf(' Intensity too low\n');
-            continue;
-        elseif p(1) > 0.9
-            fprintf(' Intensity too high\n');
-            over_expo = true;
-            break;
+        y = prctile(img_v_ec(:), x);
+        
+        s = (y - hist_store_mean) * coeff;
+        p = 1/(1 + exp(s(1:length(B)-1)*B(2:length(B))+B(1)));
+        
+        fprintf('p: %.4f\n', p);
+        if p < 0.6
+            if y(1) > 0.6
+                fprintf(' Intensity too high\n');
+                over_expo = true;
+                break;
+            else
+                fprintf(' Intensity too low\n');
+                continue;
+            end
         end
+        
+%         p = prctile(img_v_ec(:), [95.1, 98, 100]);
+%         p = srgb_gamma(p);
+%         fprintf(' Intensity percentile: [%.2f,%.2f,%.2f]\n', p(1), p(2), p(3));
+%         if p(3) < 0.80
+%             fprintf(' Intensity too low\n');
+%             continue;
+%         elseif p(1) > 0.9
+%             fprintf(' Intensity too high\n');
+%             over_expo = true;
+%             break;
+%         end
 
         valid_expo_comp(ei) = expo_comp(ei);
-%         pause;
     end
 
     if any(~isnan(valid_expo_comp))
