@@ -1,7 +1,8 @@
 function [hist_store, exp_store, valid_flags] = test_valid_image(image_path, files)
 total_images = length(files);
 
-load('pca_logit_data.mat', 'hist_store_mean', 'B', 'coeff');
+% load('pca_logit_data.mat', 'hist_store_mean', 'B', 'coeff');
+load('svm_model.mat', 'mdl', 'hist_store_mean', 'exp_mean', 'coeff');
 
 expo_comp = [-.7, 0, .7];
 x = 94:.1:100;
@@ -28,19 +29,21 @@ for i = 1:total_images
 
         y = prctile(img_v_ec(:), x);
         
-        s = (y - hist_store_mean) * coeff;
-        p = 1./(1 + exp(s(1:length(B)-1)*B(2:length(B))+B(1)));
+        s = [y - hist_store_mean, log2(t*iso)+expo_comp(ei)-exp_mean] * coeff;
+        [~, p] = predict(mdl, s(1:10));
         
         figure(1); clf;
         set(gcf, 'Position', [300, 250, 800, 400]);
         subplot(1,2,1);
         imshow(img_v_ec);
-        title(sprintf('p: %.4f', p));
+        title(sprintf('p: %.4f', 1./(1+exp(p(1)))));
         subplot(1,2,2)
         plot(x, y, [94.5, 94.5], [0, 1], 'k:', [94.3, 94.3], [0, 1], 'k:', ...
             [94,100],[0.5,0.5], 'k:', [94,100],[0.7,0.7], 'k:');
         title(sprintf('EV: %.2f', expo_comp(ei)));
         axis([94, 100, 0, 1]);
+%         drawnow;
+%         pause(.2);
         pause;
         key = get(gcf, 'CurrentKey');
         
