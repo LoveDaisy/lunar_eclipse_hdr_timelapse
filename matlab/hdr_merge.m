@@ -16,6 +16,8 @@ for i = 1:total_images
     img = im2double(imtranslate(image_store(i).image, -trans_mat(:, i, ref_ind)'));
     img_v = mean(img, 3);
     
+%     intensity_w = exp(-abs((img_v - 0.52) / 0.55).^2) .* ...
+%         exp(.014 ./ (img_v - 1 - 0.02) - .014 ./ (img_v + 0.02));
     intensity_w = exp(-abs((img_v - 0.52) / 0.5).^2);
     w = intensity_w;
     total_w = total_w + w;

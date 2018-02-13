@@ -17,7 +17,7 @@ end
 files = files(idx);
 clear idx;
 
-load('pca_logit_data.mat', 'hist_store_mean', 'B', 'coeff');
+load('svm_model.mat', 'mdl', 'hist_store_mean', 'exp_mean', 'coeff');
 
 % expo_comp = [-0.67, 0, 0.67];
 expo_comp = [-.7, 0, .7];
@@ -34,6 +34,10 @@ for i = 1:total_images
     img_v = mean(img, 3) / double(max_value);
     img_v = imfilter(img_v, fspecial('gaussian', 5, 1.3), 'symmetric');
     img_v = img_v(1:2:end, 1:2:end, :);
+    
+    info = imfinfo(sprintf('%s/%s', image_path, f_name));
+    t = info(1).DigitalCamera.ExposureTime;
+    iso = info(1).DigitalCamera.ISOSpeedRatings;
 
     valid_expo_comp = nan(3, 1);
     over_expo = false;
@@ -42,19 +46,19 @@ for i = 1:total_images
 
         y = prctile(img_v_ec(:), x);
         
-        s = (y - hist_store_mean) * coeff;
-        p = 1/(1 + exp(s(1:length(B)-1)*B(2:length(B))+B(1)));
+        s = [y - hist_store_mean, log2(t*iso)+expo_comp(ei)-exp_mean] * coeff;
+        [~, p] = predict(mdl, s(1:10));
+        p = 1./(1 + exp(p(1)));
         
         fprintf('p: %.4f\n', p);
-        if p < 0.6
+        if p(1) < 0.55
             if y(1) > 0.6
-                fprintf(' Intensity too high\n');
+                fprintf('over expo\n');
                 over_expo = true;
-                break;
             else
-                fprintf(' Intensity too low\n');
-                continue;
+                fprintf('unsuitable expo\n');
             end
+            continue;
         end
         
 %         p = prctile(img_v_ec(:), [95.1, 98, 100]);

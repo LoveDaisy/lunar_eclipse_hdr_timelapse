@@ -1,7 +1,8 @@
 clear; close all; clc;
 
 path0 = getenv('PATH');
-if ~contains(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin')
+% if ~contains(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin')
+if isempty(strfind(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin'))
     path1 = ['/usr/local/Cellar/dcraw/9.27.0_2/bin:', path0];
     setenv('PATH', path1);
 end
@@ -17,7 +18,9 @@ files = dir([input_image_path, 'IMG_*.CR2']);
 total_images = length(files);
 last_expo_idx = 0; start_file_id = 0;
 k = 1;
-for i = 1:total_images
+% for i = 1:total_images
+% for i = 800:815
+for i = 1000:1015
     f_name = [input_image_path, files(i).name];
     f_info = imfinfo(f_name);
     t = f_info(1).DigitalCamera.ExposureTime;
