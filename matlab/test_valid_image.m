@@ -1,4 +1,4 @@
-function [hist_store, valid_flags] = test_valid_image(image_path, files)
+function [hist_store, exp_store, valid_flags] = test_valid_image(image_path, files)
 total_images = length(files);
 
 load('pca_logit_data.mat', 'hist_store_mean', 'B', 'coeff');
@@ -6,6 +6,7 @@ load('pca_logit_data.mat', 'hist_store_mean', 'B', 'coeff');
 expo_comp = [-.7, 0, .7];
 x = 94:.1:100;
 hist_store = zeros(total_images * 3, length(x));
+exp_store = zeros(total_images * 3, 1);
 valid_flags = false(total_images * 3, 1);
 for i = 1:total_images
     f_name = files(i).name;
@@ -17,6 +18,10 @@ for i = 1:total_images
     img_v = mean(img, 3) / double(max_value);
     img_v = imfilter(img_v, fspecial('gaussian', 5, 1.3), 'symmetric');
     img_v = img_v(1:2:end, 1:2:end, :);
+    
+    info = imfinfo(sprintf('%s/%s', image_path, f_name));
+    t = info(1).DigitalCamera.ExposureTime;
+    iso = info(1).DigitalCamera.ISOSpeedRatings;
 
     for ei = 1:length(expo_comp)
         img_v_ec = exposure_compensation(img_v, expo_comp(ei));
@@ -40,10 +45,14 @@ for i = 1:total_images
         key = get(gcf, 'CurrentKey');
         
         hist_store(3*(i-1)+ei, :) = y(:)';
+        exp_store(3*(i-1)+ei) = log2(t*iso)+expo_comp(ei);
 
         if strcmpi(key, 'return')
             valid_flags(3*(i-1)+ei) = true;
         elseif strcmpi(key, 'q')
+            break;
+        elseif strcmpi(key, 'a')
+            valid_flags(3*(i-1)+ei:3*i) = true;
             break;
         end
     end
