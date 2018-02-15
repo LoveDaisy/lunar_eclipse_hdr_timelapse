@@ -55,38 +55,26 @@ for i = 1:total_images
             if y(1) > 0.6
                 fprintf('over expo\n');
                 over_expo = true;
+                break;
             else
                 fprintf('unsuitable expo\n');
+                continue;
             end
-            continue;
         end
-        
-%         p = prctile(img_v_ec(:), [95.1, 98, 100]);
-%         p = srgb_gamma(p);
-%         fprintf(' Intensity percentile: [%.2f,%.2f,%.2f]\n', p(1), p(2), p(3));
-%         if p(3) < 0.80
-%             fprintf(' Intensity too low\n');
-%             continue;
-%         elseif p(1) > 0.9
-%             fprintf(' Intensity too high\n');
-%             over_expo = true;
-%             break;
-%         end
 
         valid_expo_comp(ei) = expo_comp(ei);
     end
 
     if any(~isnan(valid_expo_comp))
         [~, f_name, f_ext] = fileparts(f_name);
-        if ~strcmpi(f_ext, '.tif') && ~strcmpi(f_ext, '.tiff')
-            fprintf('No TIFF file, converting RAW to TIFF...\n');
-            system(sprintf('dcraw -v -r 1.95 1.0 1.63 1.0 -k 2047 -S 15490 -g 2.4 12.92 -4 -T -q 2 "%s%s%s"', image_path, f_name, f_ext));
-            fprintf('Reading TIFF file %s...\n', f_name);
-            img = imread(sprintf('%s%s%s', image_path, f_name, '.tiff'));
-%             img = srgb_gamma(img);
-            fprintf('Removing temp TIFF file...\n');
-            system(sprintf('rm "%s%s%s"', image_path, f_name, '.tiff'));
+        if ~exist([image_path, f_name, '.ppm'], 'file')
+            fprintf('No image file, converting RAW to image...\n');
+            system(sprintf('dcraw -v -r 1.95 1.0 1.63 1.0 -k 2047 -S 15490 -g 2.4 12.92 -4 -q 3 "%s%s%s"', image_path, f_name, f_ext));
         end
+        fprintf('Reading image file %s...\n', f_name);
+        img = imread(sprintf('%s%s%s', image_path, f_name, '.ppm'));
+%         fprintf('Removing temp image file...\n');
+%         system(sprintf('rm "%s%s%s"', image_path, f_name, '.ppm'));
             
 
         img_double = im2double(img);

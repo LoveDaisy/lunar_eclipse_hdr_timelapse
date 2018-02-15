@@ -1,8 +1,8 @@
 clear; close all; clc;
 
 path0 = getenv('PATH');
-% if ~contains(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin')
-if isempty(strfind(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin'))
+if ~contains(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin')
+% if isempty(strfind(path0, '/usr/local/Cellar/dcraw/9.27.0_2/bin'))
     path1 = ['/usr/local/Cellar/dcraw/9.27.0_2/bin:', path0];
     setenv('PATH', path1);
 end
@@ -20,7 +20,10 @@ last_expo_idx = 0; start_file_id = 0;
 k = 1;
 % for i = 1:total_images
 % for i = 800:815
-for i = 1000:1015
+% for i = 1000:1015
+for i = 1200:1215
+% for i = 1400:1415
+% for i = 1600:1615
     f_name = [input_image_path, files(i).name];
     f_info = imfinfo(f_name);
     t = f_info(1).DigitalCamera.ExposureTime;
@@ -56,10 +59,9 @@ for i = 1000:1015
     fprintf('Dealing with image #%d-%d\n', start_file_id, i);
     
     image_store = choose_valid_image(input_image_path, current_files);
-    
     trans_mat = align_images(image_store);
-    
     merge_result = hdr_merge(image_store, trans_mat);
+    merge_result = local_laplacian(merge_result, 8, 0.21, 0.9);
     
     imwrite(uint16(merge_result * 65535), sprintf('%s%03d.tiff', output_image_path, k));
     k = k + 1;
