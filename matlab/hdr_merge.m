@@ -15,19 +15,8 @@ for i = 1:total_images
     fprintf('Merging image %d/%d...\n', i, total_images);
     img = im2double(imtranslate(image_store(i).image, -trans_mat(:, i, ref_ind)'));
     img_v = mean(img, 3);
-%     imwrite(uint16(img*65535), sprintf('%03d.tiff', i));
     
     intensity_w = gauss_decay_weight_function(img_v, 0.52, 0.5, 0.014, 0.018);
-%     log_w = abs(imfilter(img_v, fspecial('log', 10, 2), 'symmetric'));
-
-%     bw = log_w > prctile(log_w(:), 94);
-%     tmp = imfilter(bw * 1.0, fspecial('gaussian', 50, 15), 'symmetric');
-%     bw = tmp > prctile(tmp(:), 96);
-%     bw = imclose(bw, strel('square', 50));
-%     bw = bwareaopen(bw, 5000);
-%     bw = imfill(bw, 'holes');
-%     bw = imfilter(bw * 1.0, fspecial('gaussian', 80, 25), 'symmetric');
-%     bw = bw + 0.1;
 
     w = intensity_w;
     total_w = total_w + w;
@@ -46,15 +35,6 @@ for i = 1:total_images
         end
     end
     
-%     tmp_result = collapse_laplacian_pyramid(merge_pyr);
-%     tmp_result = max(bsxfun(@times, tmp_result, 1./total_w), 0);
-%     figure(1); clf;
-%     subplot(1,2,1);
-%     imshow(tmp_result);
-%     subplot(1,2,2);
-%     imagesc(w); axis equal; axis tight; axis off;
-%     drawnow;
-%     pause(0.2);
 end
 
 total_w_pyr = generate_gaussian_pyramid(total_w, pyr_layers, pyr_sig);

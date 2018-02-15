@@ -19,7 +19,6 @@ clear idx;
 
 load('svm_model.mat', 'mdl', 'hist_store_mean', 'exp_mean', 'coeff');
 
-% expo_comp = [-0.67, 0, 0.67];
 expo_comp = [-.7, 0, .7];
 x = 94:.1:100;
 image_store = struct('image', [], 'exposure', []);
@@ -29,7 +28,6 @@ for i = 1:total_images
     fprintf('Reading image %s...\n', f_name);
     
     img = imread(sprintf('%s/%s', image_path, f_name));
-%     img = srgb_gamma(img);
     max_value = intmax(class(img));
     img_v = mean(img, 3) / double(max_value);
     img_v = imfilter(img_v, fspecial('gaussian', 5, 1.3), 'symmetric');
@@ -69,12 +67,12 @@ for i = 1:total_images
         [~, f_name, f_ext] = fileparts(f_name);
         if ~exist([image_path, f_name, '.ppm'], 'file')
             fprintf('No image file, converting RAW to image...\n');
-            system(sprintf('dcraw -v -r 1.95 1.0 1.63 1.0 -k 2047 -S 15490 -g 2.4 12.92 -4 -q 3 "%s%s%s"', image_path, f_name, f_ext));
+            system(sprintf('dcraw -v -r 1.95 1.0 1.63 1.0 -k 2047 -S 15490 -g 2.4 12.92 -4 -q 2 "%s%s%s"', image_path, f_name, f_ext));
         end
         fprintf('Reading image file %s...\n', f_name);
         img = imread(sprintf('%s%s%s', image_path, f_name, '.ppm'));
-%         fprintf('Removing temp image file...\n');
-%         system(sprintf('rm "%s%s%s"', image_path, f_name, '.ppm'));
+        fprintf('Removing temp image file...\n');
+        system(sprintf('rm "%s%s%s"', image_path, f_name, '.ppm'));
             
 
         img_double = im2double(img);
