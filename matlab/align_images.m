@@ -8,10 +8,12 @@ function trans_mat = align_images(image_store)
 
 h = fspecial('gaussian', 20, 5);
 
-total_images = size(image_store, 1);
-tmp_expo = cat(1, image_store.exposure);
-[distinct_expo, ia, ic] = unique(tmp_expo(:,1));
-total_expos = size(distinct_expo, 1);
+total_images = length(image_store);
+% tmp_expo = cat(1, image_store.exposure);
+% [distinct_expo, ia, ic] = unique(tmp_expo(:,1));
+% total_expos = size(distinct_expo, 1);
+[distinct_expo, ia, ic] = unique(cat(1, image_store.expo));
+total_expos = length(distinct_expo);
 
 unique_trans_mat = zeros(2, total_expos, total_expos);
 for i = 1:total_expos-1
