@@ -20,7 +20,8 @@ clear idx;
 
 load('svm_model.mat', 'mdl', 'hist_store_mean', 'exp_mean', 'coeff');
 
-expo_comp = [-.7, 0, .7];
+% expo_comp = [-.7, 0, .7];
+expo_comp = 0;
 x = 94:.1:100;
 image_info = struct('name', [], 'ev', []);
 flags = false(total_images, 1);

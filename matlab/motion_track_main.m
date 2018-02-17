@@ -2,7 +2,7 @@ clear; close all; clc;
 
 work_path = '/Volumes/ZJJ-4TB/Photos/18.01.31 Lunar Eclipse by Wang Letian/timelapse/';
 input_image_path = [work_path, 'tiff/'];
-output_image_path = [work_path, 'tmp1/'];
+output_image_path = [work_path, 'aligned/'];
 
 files = dir([input_image_path, '*.tiff']);
 total_images = length(files);
@@ -38,5 +38,6 @@ for i = 1:total_images
 
     img = imtranslate(img, (img_trans(i, :) - t0));
     fprintf('Writing image %s...\n', fn);
-    imwrite(uint8(img/255), sprintf('%s%s%s', output_image_path, fn, ".jpg"));
+    imwrite(img, sprintf('%s%s%s', output_image_path, fn, ".tiff"));
+%     imwrite(uint8(img/255), sprintf('%s%s%s', output_image_path, fn, ".jpg"));
 end

@@ -50,7 +50,7 @@ for i = 1:total_expos-1
     w = w / sum(w(:));
         
     unique_trans_mat(:, i, i+1) = reshape(wrev(size(tmp) / 2) - ...
-        sum([xx(:).*w(:), yy(:).*w(:)]) + 0.5, [], 1);
+        sum([xx(:).*w(:), yy(:).*w(:)]) + 1.0, [], 1);
     unique_trans_mat(:, i+1, i) = unique_trans_mat(:, i, i+1);
 end
 
