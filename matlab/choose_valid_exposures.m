@@ -25,6 +25,7 @@ expo_comp = 0;
 x = 94:.1:100;
 image_info = struct('name', [], 'ev', []);
 flags = false(total_images, 1);
+scores = nan(total_images, length(expo_comp));
 for i = 1:total_images
     f_name = files(i).name;
     fprintf('Reading image %s...\n', f_name);
@@ -39,7 +40,7 @@ for i = 1:total_images
     t = info(1).DigitalCamera.ExposureTime;
     iso = info(1).DigitalCamera.ISOSpeedRatings;
 
-    valid_expo_comp = nan(3, 1);
+    valid_expo_comp = nan(length(expo_comp), 1);
     over_expo = false;
     for ei = 1:length(expo_comp)
         img_v_ec = exposure_compensation(img_v, expo_comp(ei));
@@ -49,9 +50,10 @@ for i = 1:total_images
         s = [y - hist_store_mean, log2(t*iso)+expo_comp(ei)-exp_mean] * coeff;
         [~, p] = predict(mdl, s(1:10));
         p = 1./(1 + exp(p(1)));
+        scores(i, ei) = p;
         
         fprintf('p: %.4f\n', p);
-        if p(1) < 0.55
+        if p(1) < 0.45
             if y(1) > 0.6
                 fprintf('over expo\n');
                 over_expo = true;
@@ -64,15 +66,21 @@ for i = 1:total_images
 
         valid_expo_comp(ei) = expo_comp(ei);
     end
+    image_info(i).name = f_name;
+    image_info(i).expo = exposure_store(i);
     if sum(~isnan(valid_expo_comp)) > 0
-        image_info(i).name = f_name;
         image_info(i).ev = valid_expo_comp(~isnan(valid_expo_comp));
-        image_info(i).expo = exposure_store(i);
         flags(i) = true;
     end
     if over_expo
         break;
     end
+end
+if all(~flags)
+    [~, idx] = nanmax(nanmax(scores, [], 2));
+    flags(idx) = true;
+    [~, evidx] = nanmax(scores(idx, :));
+    image_info(idx).ev = expo_comp(evidx);
 end
 image_info = image_info(flags);
 end

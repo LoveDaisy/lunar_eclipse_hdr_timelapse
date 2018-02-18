@@ -51,13 +51,13 @@ for i = 1:total_expos-1
         
     unique_trans_mat(:, i, i+1) = reshape(wrev(size(tmp) / 2) - ...
         sum([xx(:).*w(:), yy(:).*w(:)]) + 1.0, [], 1);
-    unique_trans_mat(:, i+1, i) = unique_trans_mat(:, i, i+1);
+    unique_trans_mat(:, i+1, i) = -unique_trans_mat(:, i, i+1);
 end
 
 for i = 1:total_expos
     for j = i+2:total_expos
         unique_trans_mat(:, i, j) = unique_trans_mat(:, i, j-1) + unique_trans_mat(:, j-1, j);
-        unique_trans_mat(:, j, i) = unique_trans_mat(:, i, j);
+        unique_trans_mat(:, j, i) = -unique_trans_mat(:, i, j);
     end
 end
 
@@ -65,7 +65,7 @@ trans_mat = zeros(2, total_images, total_images);
 for i = 1:total_images
     for j = i+1:total_images
         trans_mat(:, i, j) = unique_trans_mat(:, ic(i), ic(j));
-        trans_mat(:, j, i) = trans_mat(:, i, j);
+        trans_mat(:, j, i) = -trans_mat(:, i, j);
     end
 end
 end

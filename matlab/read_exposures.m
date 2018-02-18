@@ -13,8 +13,8 @@ parfor i = 1:total_files
     end
     fprintf('Reading image file %s...\n', f_name);
     img = imread(sprintf('%s%s%s', input_image_path, f_name, '.ppm'));
-%     fprintf('Removing temp image file...\n');
-%     system(sprintf('rm "%s%s%s"', input_image_path, f_name, '.ppm'));
+    fprintf('Removing temp image file...\n');
+    system(sprintf('rm "%s%s%s"', input_image_path, f_name, '.ppm'));
     file_store{i} = img;
 end
 

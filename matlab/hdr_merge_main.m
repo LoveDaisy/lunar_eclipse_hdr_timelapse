@@ -9,11 +9,11 @@ end
 
 work_path = '/Volumes/ZJJ-4TB/Photos/18.01.31 Lunar Eclipse by Wang Letian/';
 input_image_path = [work_path, '02/'];
-output_image_path = './';
-% output_image_path = [work_path, 'timelapse/tiff/'];
+% output_image_path = './';
+output_image_path = [work_path, 'timelapse/tiff/'];
 
 k = 1;
-expo_group.idx_range = [0, 800];
+expo_group.idx_range = [0, 0];
 start_time = tic;
 while true
     t0 = tic;
@@ -42,8 +42,9 @@ while true
     
     fprintf('Local Laplacian...\n');
     t0 = tic;
-    alpha = 0.09 + 0.0125 * length(image_store);
+    alpha = 0.09 + 0.025 * length(image_store);
     merge_result_enh = local_laplacian(merge_result, 8, alpha, 0.9);
+    merge_result_enh = merge_result_enh / prctile(merge_result_enh(:), 99.95) * 0.98;
     fprintf(' local_laplacian: %.2fs\n', toc(t0));
     
     fprintf('Write image...\n');
@@ -53,9 +54,9 @@ while true
     fprintf(' Group ellapsed: %.2fs\n', toc(group_start));
     k = k + 1;
 
-    expo_group.idx_range(2) = expo_group.idx_range(2) + 150;
-    if k > 1
-        break;
-    end
+%     expo_group.idx_range(2) = expo_group.idx_range(2) + 150;
+%     if k > 10
+%         break;
+%     end
 end
 fprintf(' Total ellapsed: %.2f\n', toc(start_time));

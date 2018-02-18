@@ -18,13 +18,16 @@ end
 total_w = 0;
 for i = 1:total_images
     fprintf('Merging image %d/%d...\n', i, total_images);
-    img = im2double(imtranslate(image_store(i).image, -trans_mat(:, i, ref_ind)'));
+    img = im2double(imtranslate(image_store(i).image, trans_mat(:, i, ref_ind)'));
     img_v = mean(img, 3);
     
     moon_area = find_moon_region(img_v);
     
     moon_w = gauss_decay_weight_function(img_v, 0.58, 0.34, 0.02, 0.01);
     sky_w = gauss_weight_function(img_v, 0.25, 0.32) .* (~moon_area);
+    
+%     img_log = max(imfilter(img_v, -fspecial('log', 8, 2.2), 'symmetric'), 0);
+%     img_log = img_log .* ~imdilate(moon_area, strel('disk', 4, 4));
 
     w = (moon_w + sky_w);
     total_w = total_w + w;
