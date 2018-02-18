@@ -20,12 +20,10 @@ clear idx;
 
 load('svm_model.mat', 'mdl', 'hist_store_mean', 'exp_mean', 'coeff');
 
-% expo_comp = [-.7, 0, .7];
-expo_comp = 0;
 x = 94:.1:100;
-image_info = struct('name', [], 'ev', []);
+image_info = struct('name', [], 'ev', [], 'type', []);
 flags = false(total_images, 1);
-scores = nan(total_images, length(expo_comp));
+scores = nan(total_images, 1);
 for i = 1:total_images
     f_name = files(i).name;
     fprintf('Reading image %s...\n', f_name);
@@ -40,47 +38,42 @@ for i = 1:total_images
     t = info(1).DigitalCamera.ExposureTime;
     iso = info(1).DigitalCamera.ISOSpeedRatings;
 
-    valid_expo_comp = nan(length(expo_comp), 1);
-    over_expo = false;
-    for ei = 1:length(expo_comp)
-        img_v_ec = exposure_compensation(img_v, expo_comp(ei));
 
-        y = prctile(img_v_ec(:), x);
-        
-        s = [y - hist_store_mean, log2(t*iso)+expo_comp(ei)-exp_mean] * coeff;
-        [~, p] = predict(mdl, s(1:10));
-        p = 1./(1 + exp(p(1)));
-        scores(i, ei) = p;
-        
-        fprintf('p: %.4f\n', p);
-        if p(1) < 0.45
-            if y(1) > 0.6
-                fprintf('over expo\n');
-                over_expo = true;
-                break;
-            else
-                fprintf('unsuitable expo\n');
-                continue;
-            end
-        end
+    img_v_ec = exposure_compensation(img_v, 0);
 
-        valid_expo_comp(ei) = expo_comp(ei);
-    end
+    y = prctile(img_v_ec(:), [50, x]);
+    img_v_med = y(1); y = y(2:end);
+    
+    s = [y - hist_store_mean, log2(t*iso)-exp_mean] * coeff;
+    [~, p] = predict(mdl, s(1:10));
+    p = 1./(1 + exp(p(1)));
+    scores(i) = p;
+    
+    fprintf('p: %.4f\n', p);
+
     image_info(i).name = f_name;
     image_info(i).expo = exposure_store(i);
-    if sum(~isnan(valid_expo_comp)) > 0
-        image_info(i).ev = valid_expo_comp(~isnan(valid_expo_comp));
+    image_info(i).ev = 0;
+    if p(1) > 0.45
         flags(i) = true;
-    end
-    if over_expo
+        image_info(i).type = 1;
+    elseif img_v_med > 0.8
+        fprintf('star expo\n');
+        image_info(i-1).type = 2;
+        flags(i-1) = true;
         break;
+    else
+        image_info(i).type = 0;
+        fprintf('unsuitable expo\n');
     end
 end
 if all(~flags)
-    [~, idx] = nanmax(nanmax(scores, [], 2));
+    [~, idx] = nanmax(scores);
     flags(idx) = true;
-    [~, evidx] = nanmax(scores(idx, :));
-    image_info(idx).ev = expo_comp(evidx);
+end
+if img_v_med < 0.8
+    flags(total_images) = true;
+    image_info(total_images).type = 2;
 end
 image_info = image_info(flags);
 end

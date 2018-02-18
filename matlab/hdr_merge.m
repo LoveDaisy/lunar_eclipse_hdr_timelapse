@@ -24,7 +24,7 @@ for i = 1:total_images
     moon_area = find_moon_region(img_v);
     
     moon_w = gauss_decay_weight_function(img_v, 0.58, 0.34, 0.02, 0.01);
-    sky_w = gauss_weight_function(img_v, 0.25, 0.32) .* (~moon_area);
+    sky_w = gauss_weight_function(img_v, 0.1, 0.32) .* (~moon_area);
     
 %     img_log = max(imfilter(img_v, -fspecial('log', 8, 2.2), 'symmetric'), 0);
 %     img_log = img_log .* ~imdilate(moon_area, strel('disk', 4, 4));

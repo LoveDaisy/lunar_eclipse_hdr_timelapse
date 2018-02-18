@@ -9,15 +9,17 @@ function trans_mat = align_images(image_store)
 h = fspecial('gaussian', 20, 5);
 
 total_images = length(image_store);
-% tmp_expo = cat(1, image_store.exposure);
-% [distinct_expo, ia, ic] = unique(tmp_expo(:,1));
-% total_expos = size(distinct_expo, 1);
+
 [distinct_expo, ia, ic] = unique(cat(1, image_store.expo));
 total_expos = length(distinct_expo);
 
 unique_trans_mat = zeros(2, total_expos, total_expos);
 for i = 1:total_expos-1
     fprintf('Estimating alignment between (%d,%d)...\n', i, i+1);
+
+    if image_store(i).type == 2
+        continue;
+    end
     
     if ~exist('img2_fft', 'var')
         img1 = mean(im2double(image_store(ia(i)).image), 3);

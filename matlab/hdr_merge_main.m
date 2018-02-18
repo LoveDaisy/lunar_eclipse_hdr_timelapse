@@ -31,18 +31,24 @@ while true
     t0 = tic;
     image_store = read_exposures(input_image_path, image_info);
     fprintf(' read_exposures: %.2fs\n', toc(t0));
+    main_image_flags = cat(1, image_info.type) == 1;
     
     t0 = tic;
-    trans_mat = align_images(image_store);
+    trans_mat = align_images(image_store(main_image_flags));
     fprintf(' align_images: %.2fs\n', toc(t0));
     
     t0 = tic;
-    merge_result = hdr_merge(image_store, trans_mat);
+    merge_result = hdr_merge(image_store(main_image_flags), trans_mat);
     fprintf(' hdr_merge: %.2fs\n', toc(t0));
+
+    t0 = tic;
+    stars = enhance_star(image_store);
+    merge_result = merge_result + stars;
+    fprintf(' enhance_star: %.2fs\n', toc(t0));
     
     fprintf('Local Laplacian...\n');
     t0 = tic;
-    alpha = 0.09 + 0.025 * length(image_store);
+    alpha = 0.09 + 0.025 * sum(main_image_flags);
     merge_result_enh = local_laplacian(merge_result, 8, alpha, 0.9);
     merge_result_enh = merge_result_enh / prctile(merge_result_enh(:), 99.95) * 0.98;
     fprintf(' local_laplacian: %.2fs\n', toc(t0));

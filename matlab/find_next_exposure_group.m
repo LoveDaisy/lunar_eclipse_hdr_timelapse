@@ -6,6 +6,7 @@ files = dir([input_image_path, '*.CR2']);
 total_images = length(files);
 
 last_expo_idx = 0; start_file_id = 0;
+current_files = [];
 for i = start_idx:total_images
     f_name = [input_image_path, files(i).name];
     f_info = imfinfo(f_name);
@@ -16,14 +17,12 @@ for i = start_idx:total_images
     if expo_idx == 1 && last_expo_idx == 0
         start_file_id = i;
         last_expo_idx = expo_idx;
-        continue;
     elseif expo_idx == length(planned_expo_time)
         if start_file_id > 0
             current_files = files(start_file_id:i);
-            last_expo_idx = 0;
+            break;
         else
             last_expo_idx = 0;
-            continue;
         end
     elseif expo_idx < last_expo_idx || abs(expo_idx - last_expo_idx) ~= 1
         if expo_idx == 1
@@ -33,19 +32,16 @@ for i = start_idx:total_images
             last_expo_idx = 0;
             start_file_id = 0;
         end
-        continue;
     else
         last_expo_idx = expo_idx;
-        continue;
     end
+end
 
+if ~isempty(current_files)
     fprintf('Find exposure group #%d-%d\n', start_file_id, i);
     expo_group.files = current_files;
     expo_group.idx_range = [start_file_id, i];
-    break;
-end
-
-if ~exist('expo_group', 'var')
+else
     expo_group.files = [];
     expo_group.idx_range = [];
 end
