@@ -12,8 +12,8 @@ input_image_path = [work_path, '02/'];
 % output_image_path = './';
 output_image_path = [work_path, 'timelapse/tiff/'];
 
-k = 1;
-expo_group.idx_range = [0, 0];
+k = 354;
+expo_group.idx_range = [0, 3530];
 start_time = tic;
 while true
     t0 = tic;

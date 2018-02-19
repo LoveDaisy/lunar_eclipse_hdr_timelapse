@@ -12,14 +12,14 @@ if ~isempty(radii)
     sky_area = ~imdilate(bw, strel('disk', 20, 4));
 else
     fprintf('WARNING: no circle detected!\n');
-    bw = img_v >= prctile(img_v(:), 94);
+    bw = img_v >= prctile(img_v(:), 93);
     bw = bwareaopen(bw, 100000);
-    bw = imdilate(bw, strel('disk', 20, 4));
+    bw = imdilate(bw, strel('disk', 30, 4));
     sky_area = ~bw;
 end
 
 img_log = max(imfilter(img_v, -fspecial('log', 15, 4), 'symmetric'), 0) .* sky_area;
-star_v = imfilter(double(img_log > max(img_log(:))*0.07), ...
+star_v = imfilter(double(img_log > max(img_log(:))*0.11), ...
     fspecial('gaussian', 8, 1.5), 'symmetric') ...
     .* img_log;
 stars = bsxfun(@times, img, star_v).^.6;

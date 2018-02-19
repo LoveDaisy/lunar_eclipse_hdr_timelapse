@@ -38,7 +38,6 @@ for i = 1:total_images
     t = info(1).DigitalCamera.ExposureTime;
     iso = info(1).DigitalCamera.ISOSpeedRatings;
 
-
     img_v_ec = exposure_compensation(img_v, 0);
 
     y = prctile(img_v_ec(:), [50, x]);
@@ -67,10 +66,10 @@ for i = 1:total_images
         fprintf('unsuitable expo\n');
     end
 end
-if all(~flags)
-    [~, idx] = nanmax(scores);
-    flags(idx) = true;
-end
+[~, idx] = nanmax(scores);
+flags(idx) = true;
+image_info(idx).type = 1;
+
 if img_v_med < 0.8
     flags(total_images) = true;
     image_info(total_images).type = 2;
