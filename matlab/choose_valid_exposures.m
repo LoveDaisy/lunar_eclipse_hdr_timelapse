@@ -18,12 +18,13 @@ end
 files = files(idx);
 clear idx;
 
-load('svm_model.mat', 'mdl', 'hist_store_mean', 'exp_mean', 'coeff');
+load('svm_model.mat', 'mdl*');
 
-x = 94:.1:100;
+x_highlight = 94:.1:100;
+x_median = 47:.1:53;
 image_info = struct('name', [], 'ev', [], 'type', []);
 flags = false(total_images, 1);
-scores = nan(total_images, 1);
+scores = nan(total_images, 3);
 for i = 1:total_images
     f_name = files(i).name;
     fprintf('Reading image %s...\n', f_name);
@@ -34,43 +35,42 @@ for i = 1:total_images
     img_v = imfilter(img_v, fspecial('gaussian', 5, 1.3), 'symmetric');
     img_v = img_v(1:2:end, 1:2:end, :);
     
-    info = imfinfo(sprintf('%s/%s', image_path, f_name));
-    t = info(1).DigitalCamera.ExposureTime;
-    iso = info(1).DigitalCamera.ISOSpeedRatings;
+%     info = imfinfo(sprintf('%s/%s', image_path, f_name));
+%     t = info(1).DigitalCamera.ExposureTime;
+%     iso = info(1).DigitalCamera.ISOSpeedRatings;
 
     img_v_ec = exposure_compensation(img_v, 0);
 
-    y = prctile(img_v_ec(:), [50, x]);
-    img_v_med = y(1); y = y(2:end);
+    y = prctile(img_v_ec(:), [x_median, x_highlight]);
     
-    s = [y - hist_store_mean, log2(t*iso)-exp_mean] * coeff;
-    [~, p] = predict(mdl, s(1:10));
-    p = 1./(1 + exp(p(1)));
-    scores(i) = p;
+    [~, s0] = predict(mdl0, [y, exposure_store(i)]);
+    [~, s1] = predict(mdl1, [y, exposure_store(i)]);
+    [~, s2] = predict(mdl2, [y, exposure_store(i)]);
+    [~, lbl] = max([s0(:,2), s1(:,2), s2(:,2)], [], 2);
+    lbl = lbl - 1;
+    scores(i, :) = 1./(1 + exp(-[s0(:,2), s1(:,2), s2(:,2)]));
     
-    fprintf('p: %.4f\n', p);
+    fprintf('lbl: %d, score: %.4f\n', lbl, scores(i, lbl+1));
 
     image_info(i).name = f_name;
     image_info(i).expo = exposure_store(i);
     image_info(i).ev = 0;
-    if p(1) > 0.45
-        flags(i) = true;
-        image_info(i).type = 1;
-    elseif img_v_med > 0.8
-        fprintf('star expo\n');
-        image_info(i-1).type = 2;
-        flags(i-1) = true;
+    image_info(i).type = lbl;
+    flags(i) = (lbl ~= 0);
+    if lbl == 1
+        fprintf('main frame\n');
+    elseif lbl == 2
+        fprintf('star frame\n');
         break;
     else
-        image_info(i).type = 0;
         fprintf('unsuitable expo\n');
     end
 end
-[~, idx] = nanmax(scores);
+[~, idx] = nanmax(scores(:, 2));
 flags(idx) = true;
 image_info(idx).type = 1;
 
-if img_v_med < 0.8
+if all(cat(1, image_info.type) ~= 2)
     flags(total_images) = true;
     image_info(total_images).type = 2;
 end
