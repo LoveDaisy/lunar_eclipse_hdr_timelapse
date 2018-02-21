@@ -17,7 +17,7 @@ unique_trans_mat = zeros(2, total_expos, total_expos);
 for i = 1:total_expos-1
     fprintf('Estimating alignment between (%d,%d)...\n', i, i+1);
 
-    if image_store(i).type == 2
+    if image_store(i).type ~= 1
         continue;
     end
     

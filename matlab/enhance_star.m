@@ -1,5 +1,5 @@
 function stars = enhance_star(image_store)
-image_flags = find(cat(1, image_store.type) == 2);
+image_flags = find(bitand(cat(1, image_store.type), 2) > 0);
 img = im2double(image_store(image_flags(1)).image);
 img_v = mean(img, 3);
 img_size = size(img_v);
@@ -19,7 +19,8 @@ else
 end
 
 img_log = max(imfilter(img_v, -fspecial('log', 15, 4), 'symmetric'), 0) .* sky_area;
-star_v = imfilter(double(img_log > max(img_log(:))*0.11), ...
+th = sqrt(mean(img_log(img_log > 0).^2)) * 4.2;
+star_v = imfilter(double(img_log > th), ...
     fspecial('gaussian', 8, 1.5), 'symmetric') ...
     .* img_log;
 stars = bsxfun(@times, img, star_v).^.6;
