@@ -14,17 +14,24 @@ for i = 1:total_images
 
     if exist('img_v1', 'var')
         img_v2 = img_v1;
+        mask2 = mask1;
     else
         img_v2 = [];
+        mask2 = [];
     end
     img_v1 = mean(im2double(img), 3);
+    fprintf('Finding moon area...\n');
+    moon_area = img_v1 >= prctile(img_v1(:), 93);
+    moon_area = bwareaopen(moon_area, 100000);
+    moon_area = imerode(moon_area, strel('disk', 15, 4));
+    mask1 = moon_area;
 
     if isempty(img_v2)
         continue;
     end
 
     fprintf('Estimating translation between (%d,%d)/%d...\n', i, i-1, total_images);
-    t = estimate_translation(img_v1, img_v2);
+    t = estimate_translation(img_v1, img_v2, mask1, mask2);
     img_trans(i, :) = t;
 end
 img_trans = cumsum(img_trans);

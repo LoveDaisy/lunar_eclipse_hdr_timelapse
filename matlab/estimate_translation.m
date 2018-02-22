@@ -1,5 +1,13 @@
-function t = estimate_translation(img1, img2)
+function t = estimate_translation(img1, img2, varargin)
 % This function estimates translation between img1 and img2
+if ~isempty(varargin)
+    mask1 = varargin{1};
+    mask2 = varargin{2};
+else
+    mask1 = true(size(img1));
+    mask2 = true(size(img2));
+end
+
 h = fspecial('gaussian', 20, 5);
 
 img_size = size(img1);
@@ -8,6 +16,8 @@ img1 = img1(img_center(1)-900:img_center(1)+900, img_center(2)-900:img_center(2)
 m = imfilter(img1, h, 'symmetric');
 d = sqrt(imfilter((img1 - m).^2, h, 'symmetric'));
 img1_he = (img1 - m) ./ (d + 0.03);
+img1_he = img1_he .* ...
+    mask1(img_center(1)-900:img_center(1)+900, img_center(2)-900:img_center(2)+900);
 img1_fft = fft2(img1_he);
 
 img_size = size(img2);
@@ -16,6 +26,8 @@ img2 = img2(img_center(1)-900:img_center(1)+900, img_center(2)-900:img_center(2)
 m = imfilter(img2, h, 'symmetric');
 d = sqrt(imfilter((img2 - m).^2, h, 'symmetric'));
 img2_he = (img2 - m) ./ (d + 0.03);
+img2_he = img2_he .* ...
+    mask2(img_center(1)-900:img_center(1)+900, img_center(2)-900:img_center(2)+900);
 img2_fft = fft2(img2_he);
 
 tmp = ifftshift(ifft2(img1_fft ./ img2_fft));
