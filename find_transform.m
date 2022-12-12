@@ -3,6 +3,9 @@ tf = match_point_feature(ref_img, moving_img, varargin{:});
 if isempty(tf) || norm(tf.T - eye(3)) > 10
     tf = match_circle(ref_img, moving_img, varargin{:});
 end
+if isempty(tf) || norm(tf.T - eye(3)) > 10
+    tf = affine2d(eye(3));
+end
 end
 
 
@@ -11,7 +14,7 @@ p = inputParser();
 p.addParameter('ShowMatch', false, @(x) islogical(x) && isscalar(x));
 p.parse(varargin{:});
 
-gaussian_detail_config = {'KernelSize', 0.0015, 'NormLimit', [0.2, 99.8]};
+gaussian_detail_config = {'KernelSize', 0.0015};
 ref_img = get_gaussian_detail(ref_img, gaussian_detail_config{:});
 moving_img = get_gaussian_detail(moving_img, gaussian_detail_config{:});
 
@@ -42,13 +45,18 @@ p = inputParser();
 p.addParameter('ShowMatch', false, @(x) islogical(x) && isscalar(x));
 p.parse(varargin{:});
 
-ref_img = normalize_image(ref_img, 'Limit', [0.2, 99.8]);
-moving_img = normalize_image(moving_img, 'Limit', [0.2, 99.8]);
+ref_img = normalize_image(ref_img);
+moving_img = normalize_image(moving_img);
 
 circle_config = {'EdgeThreshold', 0.1, 'Sensitivity', 0.99};
 rr = [162, 175];
 [center_0, ~] = imfindcircles(ref_img, rr, circle_config{:});
 [center_1, ~] = imfindcircles(moving_img, rr, circle_config{:});
+
+if isempty(center_0) || isempty(center_1)
+    tf = [];
+    return;
+end
 
 tf = affine2d([1, 0, 0; 0, 1, 0; center_0 - center_1, 1]);
 if p.Results.ShowMatch
