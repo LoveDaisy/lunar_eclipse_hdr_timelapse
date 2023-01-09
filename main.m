@@ -7,7 +7,8 @@ bracket_num = 7;
 
 exp_group_idx = 0;
 while true
-    % Read exposure bracket images
+% for exp_group_idx = 96
+    %% Read exposure bracket images
     if bracket_num * exp_group_idx + i > length(image_list)
         break;
     end
@@ -24,7 +25,7 @@ while true
     end
     clear img_name curr_img;
 
-    % Find best exposure for reference
+    %% Find best exposure for reference
     over_exp = false(bracket_num, 1);
     over_exp_mask = cell(bracket_num, 1);
     for i = 1:bracket_num
@@ -48,7 +49,7 @@ while true
         end
     end
 
-    % Register images and warp images to reference
+    %% Register images and warp images to reference
     for i = 1:bracket_num
         if i == ref_idx
             exp_group_img{i}.warp = exp_group_img{i}.original;
@@ -60,31 +61,47 @@ while true
         exp_group_img{i}.warp = imwarp(exp_group_img{i}.original, tf, 'OutputView', output_view);
     end
 
-    % Weighted merge
+    %% Weighted merge
     ref_w = rgb2gray(exp_group_img{ref_idx}.warp);
-    ref_w = (ref_w - 0.5) * 0.8 + 0.6;
-    ref_w = imguidedfilter(ref_w, ref_w, 'NeighborhoodSize', [1, 1] * 100, 'DegreeOfSmoothing', 0.1);
+    ref_w = (ref_w - 0.6) * 0.8 + 0.7;
+    ref_w = imguidedfilter(ref_w, ref_w, 'NeighborhoodSize', [1, 1] * 150, 'DegreeOfSmoothing', 0.08);
 
-    avg_img = 0;
+    lap_avg_img = [];
+    gauss_total_w = [];
     total_w = 0;
     for i = 1:bracket_num
         w = rgb2gray(exp_group_img{i}.warp);
+%         figure(i); clf;
+%         subplot(1,2,1);
+%         imshow(w);
         if over_exp(i)
             w_valid = ~over_exp_mask{i};
         else
             w_valid = true(size(w));
         end
-        w = exp(-abs(w - ref_w).^2 / 0.25^2) .* w_valid;
-        w = imguidedfilter(w, w, 'NeighborhoodSize', [1, 1] * 100, 'DegreeOfSmoothing', 0.05);
-        avg_img = avg_img + exp_group_img{i}.warp .* w;
+        w = exp(-abs(w - ref_w).^2 / 0.35^2);
+        exp_group_img{i}.w = w;
+%         subplot(1,2,2);
+%         imshow(w);
         total_w = total_w + w;
+        gauss_w = make_pyramid(w, 'Levels', 7, 'Type', 'gaussian');
+        lap_img = make_pyramid(exp_group_img{i}.warp, 'Levels', 7, 'Type', 'laplacian');
+        lap_img = pyr_op(lap_img, gauss_w, 'mul');
+        if isempty(lap_avg_img)
+            lap_avg_img = lap_img;
+            gauss_total_w = gauss_w;
+        else
+            lap_avg_img = pyr_op(lap_avg_img, lap_img, 'add');
+            gauss_total_w = pyr_op(gauss_total_w, gauss_w, 'add');
+        end
     end
-    avg_img = avg_img ./ total_w;
+    lap_avg_img = pyr_op(lap_avg_img, gauss_total_w, 'div');
+    avg_img = reconstruct_pyramid(lap_avg_img);
 
     % Display and save
-    figure(10); clf;
-    imshow(avg_img);
-    drawnow;
+%     figure(10); clf;
+%     imshow(avg_img);
+%     drawnow;
+    imwrite(uint8(avg_img * 256), sprintf('final tiff/%04d.jpg', exp_group_idx));
     exp_group_idx = exp_group_idx + 1;
-    imwrite(uint8(avg_img * 256), sprintf('final tiff/%04d.tiff', exp_group_idx));
 end
